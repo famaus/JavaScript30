@@ -5,6 +5,9 @@
   - [GitHub Desktop GUI Client](#github-desktop-gui-client)
   - [Git version Check](#git-version-check)
 - [Git Configuration](#git-configuration)
+  - [git config editor - core.editor](#git-config-editor---coreeditor)
+  - [git alias](#git-alias)
+    - [Example: Using aliases to create new Git commands](#example-using-aliases-to-create-new-git-commands)
 - [Info Commands](#info-commands)
   - [git status](#git-status)
   - [git log](#git-log)
@@ -12,6 +15,15 @@
     - [Git-show options](#git-show-options)
     - [Pretty formats for Git-show](#pretty-formats-for-git-show)
     - [Examples of Git-show](#examples-of-git-show)
+  - [git diff](#git-diff)
+    - [Comparing files](#comparing-files)
+    - [Comparing all changes](#comparing-all-changes)
+    - [Comparing files between two different commits](#comparing-files-between-two-different-commits)
+    - [Comparing two branches](#comparing-two-branches)
+    - [Comparing files from two branches](#comparing-files-from-two-branches)
+  - [git blame](#git-blame)
+    - [Common options](#common-options)
+    - [Git blame vs git log](#git-blame-vs-git-log)
 - [Setting up a repository](#setting-up-a-repository)
   - [git init](#git-init)
   - [git clone](#git-clone)
@@ -20,22 +32,38 @@
     - [Shallow clone](#shallow-clone)
 - [Saving changes](#saving-changes)
   - [git add](#git-add)
-    - [Common options](#common-options)
+    - [Common options](#common-options-1)
     - [Examples](#examples)
   - [git commit](#git-commit)
-    - [Common options](#common-options-1)
+    - [Common options](#common-options-2)
     - [Examples](#examples-1)
     - [How to update (amend) a commit](#how-to-update-amend-a-commit)
+  - [git tag](#git-tag)
+    - [Creating a tag](#creating-a-tag)
+    - [Annotated tags](#annotated-tags)
+    - [Lightweight tags](#lightweight-tags)
+    - [Listing tags](#listing-tags)
+    - [Tagging old commits](#tagging-old-commits)
+    - [ReTagging/Replacing old tags](#retaggingreplacing-old-tags)
+    - [Sharing: Pushing tags to remote](#sharing-pushing-tags-to-remote)
+    - [Checking out tags](#checking-out-tags)
+    - [Deleting tags](#deleting-tags)
   - [.gitignore](#gitignore)
     - [Personal Git ignore rules](#personal-git-ignore-rules)
     - [Global Git ignore rules](#global-git-ignore-rules)
     - [Ignoring a previously committed file](#ignoring-a-previously-committed-file)
     - [Committing an ignored file](#committing-an-ignored-file)
+    - [Debugging .gitignore files](#debugging-gitignore-files)
 - [Undoing Changes](#undoing-changes)
   - [git clean](#git-clean)
+    - [Common options and usage](#common-options-and-usage)
   - [git revert](#git-revert)
   - [git reset](#git-reset)
   - [git rm](#git-rm)
+    - [Usage](#usage)
+    - [How to undo git rm](#how-to-undo-git-rm)
+    - [Why use git rm instead of rm](#why-use-git-rm-instead-of-rm)
+    - [How to remove files no longer in the filesystem](#how-to-remove-files-no-longer-in-the-filesystem)
 - [Branches](#branches)
 - [Synchronize changes](#synchronize-changes)
 - [git push](#git-push)
@@ -87,6 +115,51 @@ Run below command to check installed version:
 | `git config --global user.email "[email address]"` | Sets the email you want attached to your commit transactions |
 | `git config --global color.ui auto` | Enables helpful colorization of command line output |
 | `$ git config --global core.excludesFile ~/.gitignore_global` | Set global `.gitignore` file.<br/>Be sure to create `.~/gitignore_global` file before executing this command. |
+
+## git config editor - core.editor
+
+Many Git commands will launch a text editor to prompt for further input. One of the most common use cases for `git config` is configuring which editor Git should use. Listed below is a table of popular editors and matching `git config` commands:
+
+| **Editor** | **config command** |
+| :-- | :-- |
+| Atom | `$ git config --global core.editor "atom --wait"` |
+| emacs | `$ git config --global core.editor "emacs"` |
+| nano | `$ git config --global core.editor "nano -w"` |
+| vim | `$ git config --global core.editor "vim"` |
+| Sublime Text (Mac) | `$ git config --global core.editor "subl -n -w"` |
+| Sublime Text (Win, 32-bit install) | `$ git config --global core.editor "'c:/program files (x86)/sublime text 3/sublimetext.exe' -w"` |
+| Sublime Text (Win, 64-bit install) | `$ git config --global core.editor "'c:/program files/sublime text 3/sublimetext.exe' -w"` |
+| Textmate | `$ git config --global core.editor "mate -w"` |
+
+## git alias
+
+Git aliases are a powerful workflow tool that create shortcuts to frequently used Git commands. Using Git aliases will make you a faster and more efficient developer. Aliases can be used to wrap a sequence of Git commands into new faux Git command. Git aliases are created through the use of the git config command which essentially modifies local or global Git config files.
+
+To better understand Git aliases let us create some examples.
+
+    $ git config --global alias.co checkout
+    $ git config --global alias.br branch
+    $ git config --global alias.ci commit
+    $ git config --global alias.st status
+
+On linux systems, the global config file is located in the User home directory at `/.gitconfig`.
+
+    [alias]
+    co = checkout
+    br = branch
+    ci = commit
+    st = status
+
+### Example: Using aliases to create new Git commands
+
+A common Git pattern is to remove recently added files from the staging area. This is achieved by leveraging options to the `git reset` command. A new alias can be created to encapsulate this behavior and create a new alias-command-keyword which is easy to remember:
+
+    $ git config --global alias.unstage 'reset HEAD --'
+
+The preceding code example creates a new alias `unstage`. This now enables the invocation of `git unstage. git unstage` which will perform a reset on the staging area. This makes the following two commands equivalent.
+
+    $ git unstage fileA
+    $ git reset HEAD -- fileA
 
 # Info Commands
 
@@ -285,6 +358,187 @@ This will show the v2.0.0 tag and also commit at `6ef002d74cbbc099e1063728cab14
 
 This will output all commits in the range from `commitA` to `commit D`
 
+## git diff
+
+`git diff` is a multi-use Git command that when executed runs a diff function on Git data sources. These data sources can be commits, branches, files and more. The `git diff` command is often used along with `git status` and `git log` to analyze the current state of a Git repo.
+
+To understand this command, consider below example:
+
+    $ git log --oneline
+    460740c (HEAD -> master) reverting back to fourth
+    0a4a799 restore to third change
+    c922b14 fourth change
+    efae9f8 third change
+    335a181 second change
+    1976f2d (tag: v1.0) first change
+    8eca64f empty file
+
+    $ git diff efae9f8 c922b14
+    diff --git a/demo_file b/demo_file
+    index ed585a5..d81c4f3 100644
+    --- a/demo_file
+    +++ b/demo_file
+    @@ -1,3 +1,4 @@
+    first change
+    second change
+    third change
+   +fourth change
+
+1\. Comparison input
+
+    diff --git a/demo_file b/demo_file
+
+This line displays the input sources of the diff. We can see that `a/demo_file` and `b/demo_file` have been passed to the diff.
+
+2\. Meta data
+
+    index ed585a5..d81c4f3 100644
+
+This line displays some internal Git metadata. You will most likely not need this information. The numbers in this output correspond to Git object version hash identifiers.
+
+3\. Markers for changes
+
+    --- a/demo_file
+    +++ b/demo_file
+
+These lines are a legend that assigns symbols to each diff input source. In this case, changes from `a/demo_file` are marked with a `---` and the changes from `b/demo_file` are marked with the `+++` symbol.
+
+4\. Diff chunks
+
+The remaining diff output is a list of diff 'chunks'. A diff only displays the sections of the file that have changes. In our current example, we only have one chunk as we are working with a simple scenario. Chunks have their own granular output semantics.
+
+    @@ -1,3 +1,4 @@
+    first change
+    second change
+    third change
+   +fourth change
+
+The first line is the chunk header. Each chunk is prepended by a header enclosed within `@@` symbols. The content of the header is a summary of changes made to the file. In our simplified example, we have -1 +1 meaning line one had changes. In a more realistic diff, you would see a header like:
+
+    @@ -34,6 +34,8 @@
+
+In this header example, 6 lines have been extracted starting from line number 34. Additionally, 8 lines have been added starting at line number 34.
+
+The remaining content of the diff chunk displays the recent changes. Each changed line is prepended with a `+` or `-` symbol indicating which version of the diff input the changes come from. As we previously discussed, `-` indicates changes from the `a/demo_file` and + indicates changes from `b/demo_file`.
+
+### Comparing files
+
+The `git diff` command can be passed an explicit file path option. When a file path is passed to `git diff` the diff operation will be scoped to the specified file. The below examples demonstrate this usage.
+
+    $ git diff HEAD ./path/to/file
+
+This example is scoped to `./path/to/file` when invoked, it will compare the specific changes in the working directory, against the index, showing the changes that are not staged yet. By default `git diff` will execute the comparison against `HEAD`. Omitting `HEAD` in the example above `git diff ./path/to/file` has the same effect.
+
+    $ git diff --cached ./path/to/file
+
+When `git diff` is invoked with the `--cached` option the diff will compare the staged changes with the local repository. The `--cached` option is synonymous with `--staged`.
+
+### Comparing all changes
+
+Invoking `git diff` without a file path will compare changes across the entire repository. The above, file specific examples, can be invoked without the `./path/to/file` argument and have the same output results across all files in the local repo.
+
+### Comparing files between two different commits
+
+`git diff` can be passed Git refs to commits to diff. Some example refs are, `HEAD`, tags, and branch names. Every commit in Git has a commit ID which you can get when you execute `GIT LOG`. You can also pass this commit ID to `git diff`.
+
+    $ git log --pretty=oneline
+    957fbc92b123030c389bf8b4b874522bdf2db72c add feature
+    ce489262a1ee34340440e55a0b99ea6918e19e7a rename some classes
+    6b539f280d8b0ec4874671bae9c6bed80b788006 refactor some code for feature
+    646e7863348a427e1ed9163a9a96fa759112f102 add some copy to body
+
+    $:> git diff 957fbc92b123030c389bf8b4b874522bdf2db72c ce489262a1ee34340440e55a0b99ea6918e19e7a
+
+###  Comparing two branches
+
+Branches are compared like all other ref inputs to `git diff`
+
+    $ git diff branch1..other-feature-branch
+
+This example introduces the dot operator. The two dots in this example indicate the diff input is the tips of both branches. The same effect happens if the dots are omitted and a space is used between the branches. Additionally, there is a three dot operator:
+
+    $ git diff branch1...other-feature-branch
+
+The three dot operator initiates the diff by changing the first input parameter `branch1`. It changes `branch1` into a ref of the shared common ancestor commit between the two diff inputs, the shared ancestor of `branch1` and other-feature-branch. The last parameter input parameter remains unchanged as the tip of other-feature-branch.
+
+### Comparing files from two branches
+
+To compare a specific file across branches, pass in the path of the file as the third argument to `git diff`
+
+    $ git diff main new_branch ./diff_test.txt
+
+## git blame
+
+The high-level function of `git blame` is the display of author metadata attached to specific committed lines in a file. This is used to examine specific points of a file's history and get context as to who the last author was that modified the line. This is used to explore the history of specific code and answer questions about what, how, and why the code was added to a repository.
+
+`git blame` only operates on individual files. A file-path is required for any useful output. The default execution of `git blame` will simply output the commands help menu. For this example, we will operate on sample README.MD file.
+
+    $ git blame README.MD
+
+Executing the above command will give us our first sample of blame output. Consider the following output is a subset of the full blame output of the README. Additionally, this output is static is reflective of the state of the repo at the time of this writing.
+
+    $ git blame README.md
+        82496ea3 (kevzettler     2018-02-28 13:37:02 -0800  1) # Git Blame example
+        82496ea3 (kevzettler     2018-02-28 13:37:02 -0800  2)
+        89feb84d (Albert So      2018-03-01 00:54:03 +0000  3) This repository is an example of a project with multiple contributors making commits.
+        82496ea3 (kevzettler     2018-02-28 13:37:02 -0800  4)
+        82496ea3 (kevzettler     2018-02-28 13:37:02 -0800  5) The repo use used elsewhere to demonstrate `git blame`
+        82496ea3 (kevzettler     2018-02-28 13:37:02 -0800  6)
+        89feb84d (Albert So      2018-03-01 00:54:03 +0000  7) Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod TEMPOR incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+        89feb84d (Albert So      2018-03-01 00:54:03 +0000  8)
+        eb06faed (Juni Mukherjee 2018-03-01 19:53:23 +0000  9) Annotates each line in the given file with information from the revision which last modified the line. Optionally, start annotating from the given revision.
+        eb06faed (Juni Mukherjee 2018-03-01 19:53:23 +0000 10)
+        548dabed (Juni Mukherjee 2018-03-01 19:55:15 +0000 11) Creating a line to support documentation needs for git blame.
+        548dabed (Juni Mukherjee 2018-03-01 19:55:15 +0000 12)
+        548dabed (Juni Mukherjee 2018-03-01 19:55:15 +0000 13) Also, it is important to have a few of these commits to clearly reflect the who, the what and the when. This will help Kev get good screenshots when he runs the git blame on this README.
+
+This is a sample of the first 13 lines of the README.md file. To better understand this output lets break down a line. The following table displays the content of line 3 and the columns of the table indicate the column content.
+
+| Id | Author | Timestamp | Line Number | Line Content |
+| :-: | :-: | :-: | :-: | :-- |
+| 89feb84d | Albert So | 2018-03-01 00:54:03 +0000 | 3 | This repository is an example of a project with multiple contributors making commits. |
+
+If we review the blame output list, we can make some observations. There are three authors listed. In addition to the project's maintainer Kev Zettler, Albert So, and Juni Mukherjee are also listed. Authors are generally the most valuable part of `git blame` output. The timestamp column is also primarily helpful. What the change was is indicated by line content column.
+
+### Common options
+
+    $ git blame -L 1,5 README.md
+
+The `-L` option will restrict the output to the requested line range. Here we have restricted the output to lines 1 through 5.
+
+    $ git blame -e README.md
+
+The `-e` option shows the authors email address instead of username.
+
+    $ git blame -w README.md
+
+The `-w` option ignores whitespace changes. If a previous author has modified the spacing of a file by switching from tabs to spaces or adding new lines this, unfortunately, obscures the output of `git blame` by showing these changes.
+
+    $ git blame -M README.md
+
+The `-M` option detects moved or copied lines within in the same file. This will report the original author of the lines instead of the last author that moved or copied the lines.
+
+    $ git blame -C README.md
+
+The `-C` option detects lines that were moved or copied from other files. This will report the original author of the lines instead of the last author that moved or copied the lines.
+
+### Git blame vs git log
+
+While `git blame` displays the last author that modified a line, often times you will want to know when a line was originally added. This can be cumbersome to achieve using `git blame`. It requires a combination of the `-w`, `-C`, and `-M` options. It can be far more convenient to use the `git log` command.
+
+To list all original commits in-which a specific code piece was added or modified execute `git log` with the `-S` option. Append the `-S` option with the code you are looking for. Let's take one of the lines from the README output above to use as an example. Let us take the text "CSS3D and WebGL renderers" from Line 12 of the README output.
+
+    $ git log -S"CSS3D and WebGL renderers." --pretty=format:'%h %an %ad %s'
+    e339d3c85 Mario Schuettel Tue Oct 13 16:51:06 2015 +0200 reverted README.md to original content
+    509c2cc35 Daniel Tue Sep 8 13:56:14 2015 +0200 Updated README
+    cb20237cc Mr.doob Mon Dec 31 00:22:36 2012 +0100 Removed DOMRenderer. Now with the CSS3DRenderer it has become irrelevant.
+
+This output shows us that content from the README was added or modified 3 times by 3 different authors. It was originally added in commit cb20237cc by Mr.doob. In this example, `git log` has also been prepended with the `--pretty-format` option. This option converts the default output format of `git log` into one that matches the format of `git log`.
+
+
+
+
+
 # Setting up a repository
 
 ## git init
@@ -443,6 +697,136 @@ To continue with the `hello.py` example above. Let's make further updates to 
     $ git commit --amend
 
 This will once again, open up the configured text editor. This time, however, it will be pre-filled with the commit message we previously entered. This indicates that we are not creating a new commit, but editing the last.
+
+## git tag
+
+Tags are ref's that point to specific points in Git history. Tagging is generally used to capture a point in history that is used for a marked version release (i.e. v1.0.1).
+
+A tag is like a branch that doesn’t change. Unlike branches, tags, after being created, have no further history of commits.
+
+### Creating a tag
+
+To create a new tag execute the following command:
+
+    $ git tag <tagname>
+
+Replace `<tagname>` with a semantic identifier to the state of the repo at the time the tag is being created. A common pattern is to use version numbers like `git tag v1.4`.
+
+Git supports two different types of tags, annotated and lightweight tags. The previous example created a lightweight tag. Lightweight tags and Annotated tags differ in the amount of accompanying meta data they store. A best practice is to consider Annotated tags as public, and Lightweight tags as private. Annotated tags store extra meta data such as: the tagger name, email, and date. This is important data for a public release. Lightweight tags are essentially 'bookmarks' to a commit, they are just a name and a pointer to a commit, useful for creating quick links to relevant commits.
+
+### Annotated tags
+
+Annotated tags are stored as full objects in the Git database. To reiterate, They store extra meta data such as: the tagger name, email, and date. Similar to commits and commit messages Annotated tags have a tagging message. Additionally, for security, annotated tags can be signed and verified with GNU Privacy Guard (GPG). Suggested best practices for git tagging is to prefer annotated tags over lightweight so you can have all the associated meta-data.
+
+    $ git tag -a v1.4
+
+Executing this command will create a new annotated tag identified with `v1.4`. The command will then open up the configured default text editor to prompt for further meta data input.
+
+    $ git tag -a v1.4 -m "my version 1.4"
+
+Executing this command is similar to the previous invocation, however, this version of the command is passed the `-m` option and a message. This is a convenience method similar to `git commit -m` that will immediately create a new tag and forgo opening the local text editor in favor of saving the message passed in with the `-m` option.
+
+### Lightweight tags
+
+    $ git tag v1.4-lw
+
+Executing this command creates a lightweight tag identified as `v1.4-lw.` Lightweight tags are created with the absence of the `-a`, `-s`, or `-m` options. Lightweight tags create a new tag checksum and store it in the `.git/` directory of the project's repo.
+
+### Listing tags
+
+To list stored tags in a repo execute the following:
+
+    $ git tag
+
+To refine the list of tags the `-l` option can be passed with a wild card expression:
+
+    $ git tag -l *-rc*
+    v0.10.0-rc1
+    v0.11.0-rc1
+    v0.12.0-rc1
+    v0.13.0-rc1
+    v0.13.0-rc2
+    v0.14.0-rc1
+    v0.9.0-rc1
+    v15.0.0-rc.1
+    v15.0.0-rc.2
+    v15.4.0-rc.3
+
+This previous example uses the `-l` option and a wildcard expression of `-rc` which returns a list of all tags marked with a `-rc` prefix, traditionally used to identify _release candidates_.
+
+### Tagging old commits
+
+The previous tagging examples have demonstrated operations on implicit commits. By default, `git tag` will create a tag on the commit that `HEAD` is referencing. Alternatively `git tag` can be passed as a ref to a specific commit. This will tag the passed commit instead of defaulting to `HEAD.` To gather a list of older commits execute the `git log` command.
+
+    $ git log --oneline
+    3b1d230 (HEAD -> master) fixed EOL
+    460740c reverting back to fourth
+    0a4a799 restore to third change
+    f9ec630 Revert to "fourth change"
+    2e5676f Revert to "fourth change"
+    c922b14 fourth change
+    efae9f8 third change
+    335a181 second change
+    1976f2d (tag: v1.0) first change
+    8eca64f empty file
+
+Executing `git log` will output a list of commits. In this example we will pick `second change` for the new tag. We will need to reference to the commit SHA hash to pass to Git:
+
+    $ git tag -a v1.2 335a181
+
+Executing the above `git tag` invocation will create a new annotated commit identified as `v1.2` for the commit we selected in the previous `git log` example.
+
+### ReTagging/Replacing old tags
+
+If you try to create a tag with the same identifier as an existing tag, Git will throw an error like:
+
+    fatal: tag 'v0.4' already exists
+
+Additionally if you try to tag an older commit with an existing tag identifier Git will throw the same error.
+
+In the event that you must update an existing tag, the `-f FORCE` option must be used.
+
+    $ git tag -a -f v1.4 15027957951b64cf874c3557a0f3547bd83b3ff6
+
+Executing the above command will map the `15027957951b64cf874c3557a0f3547bd83b3ff6` commit to the `v1.4` tag identifier. It will override any existing content for the `v1.4` tag.
+
+### Sharing: Pushing tags to remote
+
+Sharing tags is similar to pushing branches. By default, `git push` will not push tags. Tags have to be explicitly passed to `git push`.
+
+    $ git push origin v1.4
+    Counting objects: 14, done.
+    Delta compression using up to 8 threads.
+    Compressing objects: 100% (12/12), done.
+    Writing objects: 100% (14/14), 2.05 KiB | 0 bytes/s, done.
+    Total 14 (delta 3), reused 0 (delta 0)
+    To git@bitbucket.com:atlasbro/gittagdocs.git
+     * [new tag]         v1.4 -> v1.4
+
+To push multiple tags simultaneously pass the `--tags` option to `git push` command. When another user clones or pulls a repo they will receive the new tags.
+
+### Checking out tags
+
+You can view the state of a repo at a tag by using the [git checkout](https://www.atlassian.com/git/tutorials/using-branches/git-checkout) command.
+
+    $ git checkout v1.4
+
+The above command will checkout the `v1.4` tag. This puts the repo in a detached `HEAD` state. This means any changes made will not update the tag. They will create a new detached commit. This new detached commit will not be part of any branch and will only be reachable directly by the commits SHA hash. Therefore it is a best practice to create a new branch anytime you're making changes in a detached `HEAD` state.
+
+### Deleting tags
+
+Deleting tags is a straightforward operation. Passing the `-d` option and a tag identifier to `git tag` will delete the identified tag.
+
+    $ git tag
+    v1
+    v2
+    v3
+    $ git tag -d v1
+    $ git tag
+    v2
+    v3
+
+In this example `git tag` is executed to display a list of tags showing v1, v2, v3, Then `git tag -d v1` is executed which deletes the v1 tag.
 
 ## .gitignore
 
@@ -608,18 +992,188 @@ You might consider doing this if you have a general pattern (like `*.log`) defi
 
 This approach is more obvious, and less confusing, for your teammates.
 
+### Debugging .gitignore files
+
+If you have complicated `.gitignore` patterns, or patterns spread over multiple `.gitignore` files, it can be difficult to track down why a particular file is being ignored. You can use the `git check-ignore` command with the `-v` (or `--verbose`) option to determine which pattern is causing a particular file to be ignored:
+
+    $ git check-ignore -v debug.log
+    .gitignore:3:*.log  debug.log
+
+The output shows:
+
+    <file containing the pattern> : <line number of the pattern> : <pattern>    <file name>
+
+You can pass multiple file names to `git check-ignore` if you like, and the names themselves don't even have to correspond to files that exist in your repository.
+
 # Undoing Changes
 
 ## git clean
 
+Git clean can be considered complementary to other commands like git reset and git checkout. Whereas these other commands operate on files previously added to the Git tracking index, the git clean command operates on untracked files. Untracked files are files that have been created within your repo's working directory but have not yet been added to the repository's tracking index using the git add command.
+
+### Common options and usage
+
+    -n
+
+The `-n` option will perform a “dry run” of git clean. This will show you which files are going to be removed without actually removing them. It is a best practice to always first perform a dry run of git clean.
+
+    -f or --force
+
+The force option initiates the actual deletion of untracked files from the current directory. Force is required unless the `clean.requireForce` configuration option is set to false. This will not remove untracked folders or files specified by `.gitignore`.
+
+    -d include directories
+
+The -d option tells git clean that you also want to remove any untracked directories, by default it will ignore directories.
+
+    -x force removal of ignored files
+
+A common software release pattern is to have a build or distribution directory that is not committed to the repositories tracking index. The build directory will contain ephemeral build artifacts that are generated from the committed source code. This build directory is usually added to the repositories `.gitignore` file. It can be convenient to also clean this directory with other untracked files. The `-x` option tells git clean to also include any ignored files. As with previous git clean invocations, it is a best practice to execute a 'dry run' first, before the final deletion. The `-x` option will act on all ignored files, not just project build specific ones. This could be unintended things like `.idea` IDE configuration files.
+
+    git clean -xf
+
+Like the `-d` option `-x` can be passed and composed with other options. This example demonstrates a combination with `-f` that will remove untracked files from the current directory as well as any files that Git usually ignores.
+
+    -i interactive mode
+
+git clean has an "interactive" mode that you can initiate by passing the -i option. The interactive mode will display a What now> prompt that requests a command to apply to the untracked files. The commands themselves are fairly self explanatory.
+
 ## git revert
+
+The `git revert` command can be considered an 'undo' type command, however, it is not a traditional undo operation. Instead of removing the commit from the project history, it figures out how to invert the changes introduced by the commit and appends a new commit with the resulting inverse content. This prevents Git from losing history, which is important for the integrity of your revision history and for reliable collaboration.
+
+Reverting should be used when you want to apply the inverse of a commit from your project history. This can be useful, for example, if you’re tracking down a bug and find that it was introduced by a single commit. Instead of manually going in, fixing it, and committing a new snapshot, you can use `git revert` to automatically do all of this for you.
+
+Below are the steps to revert a commit:
+
+    # Step 1: first check the commit history
+    git log --oneline
+
+    # Step 2: select the commit you want to revert
+    git revert nd7hjd9
+
+    # Step 3: Resolve  any conflicts that might arive
+    # Edit the file(s) in your preferred editor to resolve conflicts
+    # Then mark the resolved files
+    git add [file]
+
+    # in case of all files
+    git add .
+
+    # Step 4: Complete the revert commit
+    git commit -m "Revert commit h7i8j9k to fix bug in feature Y"
+
+    # Step 5: Push the revert commit to the remote repository
+    git push origin master
 
 ## git reset
 
-https://www.atlassian.com/git/tutorials/undoing-changes/git-reset
+The `git reset` command is used to reset current HEAD to a specified state. It can modify the index and working directory depending on the options used. Here are the main types of reset:
+
+1. **Soft Reset** (`git reset --soft <commit>`):
+
+    This moves the HEAD pointer to a specified commit but leaves your working directory and staging area (index) unchanged. It's useful if you want to undo a commit but keep your changes staged.
+
+        $ git reset --soft HEAD~1
+
+     This undoes the last commit, keeping the changes staged.
+
+2. **Mixed Reset** (`git reset --mixed <commit>`):
+
+    This is the default mode. It moves the HEAD pointer and updates the index to match the specified commit, but it does not change the working directory. This unstages changes that were committed.
+
+        $ git reset HEAD~1
+
+    This undoes the last commit and unstages the changes, allowing you to modify them before committing again.
+
+3. **Hard Reset** (`git reset --hard <commit>`):
+
+    This resets the HEAD pointer, the index, and the working directory to the specified commit. It will discard all changes, so use this with caution.
+
+    $ git reset --hard HEAD~1
+
+    This completely removes the last commit and all changes associated with it.
+
+4. **Resetting to a Specific Commit**:
+
+    You can also reset to any specific commit by using its SHA.
+
+    $ git reset --hard abc1234
+
+    This resets the repository to the state of the commit with SHA `abc1234`.
+
+Remember to always be careful when using `--hard` as it irreversibly deletes changes.
 
 ## git rm
 
+The `git rm` command can be used to remove individual files or a collection of files. The primary function of `git rm` is to remove tracked files from the Git index. Additionally, `git rm` can be used to remove files from both the staging index and the working directory. There is no option to remove a file from only the working directory. The files being operated on must be identical to the files in the current `HEAD`. If there is a discrepancy between the `HEAD` version of a file and the staging index or working tree version, Git will block the removal. This block is a safety mechanism to prevent removal of in-progress changes.
+
+### Usage
+
+    <file>…​
+
+Specifies the target files to remove. The option value can be an individual file, a space delimited list of files `file1 file2 file3`, or a wildcard file glob `(~./directory/*)`.
+
+    -f
+    --force
+
+The `-f` option is used to override the safety check that Git makes to ensure that the files in `HEAD`  match the current content in the staging index and working directory.
+
+    -n
+    --dry-run
+
+The "dry run" option is a safeguard that will execute the `git rm` command but not actually delete the files. Instead it will output which files it would have removed.
+
+    -r
+
+The `-r` option is shorthand for 'recursive'. When operating in recursive mode `git rm` will remove a target directory and all the contents of that directory.
+
+    --
+
+The separator option is used to explicitly distinguish between a list of file names and the arguments being passed to `git rm`. This is useful if some of the file names have syntax that might be mistaken for other options.
+
+    --cached
+
+The cached option specifies that the removal should happen only on the staging index. Working directory files will be left alone.
+
+    --ignore-unmatch
+
+This causes the command to exit with a 0 sigterm status even if no files matched. This is a Unix level status code. The code 0 indicates a successful invocation of the command. The `--ignore-unmatch` option can be helpful when using `git rm` as part of a greater shell script that needs to fail gracefully.
+
+    -q
+    --quiet
+
+The quiet option hides the output of the `git rm` command. The command normally outputs one line for each file removed.
+
+### How to undo git rm
+
+Executing `git rm` is not a permanent update. The command will update the staging index and the working directory. These changes will not be persisted until a new commit is created and the changes are added to the commit history. This means that the changes here can be "undone" using common Git commands.
+
+    git reset HEAD
+
+A reset will revert the current staging index and working directory back to the `HEAD` commit. This will undo a `git rm`.
+
+    git checkout .
+
+A checkout will have the same effect and restore the latest version of a file from `HEAD`.
+
+In the event that `git rm` was executed and a new commit was created which persist the removal, `git reflog` can be used to find a ref that is before the `git rm` execution.
+
+### Why use git rm instead of rm
+
+A Git repository will recognize when a regular shell `rm` command has been executed on a file it is tracking. It will update the working directory to reflect the removal. It will not update the staging index with the removal. An additional `git add` command will have to be executed on the removed file paths to add the changes to the staging index. The `git rm` command acts a shortcut in that it will update the working directory and the staging index with the removal.
+
+### How to remove files no longer in the filesystem
+
+As stated above in "Why use `git rm` instead of `rm`" , `git rm` is actually a convenience command that combines the standard shell `rm` and `git add` to remove a file from the working directory and promote that removal to the staging index. A repository can get into a cumbersome state in the event that several files have been removed using only the standard shell `rm` command.
+
+If intentions are to record all the explicitly removed files as part of the next commit, `git commit -a` will add all the removal events to the staging index in preparation of the next commit.
+
+If however, intentions are to persistently remove the files that were removed with the shell `rm`, use the following command:
+
+    git diff --name-only --diff-filter=D -z | xargs -0 git rm --cached
+
+
+This command will generate a list of the removed files from the working directory and pipe that list to `git rm --cached` which will update the staging index.
 
 # Branches
 
